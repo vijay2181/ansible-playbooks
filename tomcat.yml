@@ -1,0 +1,38 @@
+---
+- name: setup tomcat 
+  hosts: all
+  become: true 
+  remote_user: ansadmin
+  tasks:
+  - name: install java
+    yum:
+      name: java                  #(for rhel it is "yum install java")
+      state: installed
+    when: ansible_os_family == "RedHat"
+
+
+  - name: install java on ubuntu
+    apt:
+      name: default-jdk              #(for ubuntu it is default-jdk)
+      state: present
+    when: ansible_os_family == "Debian"
+
+  - name: download tomcat packages 
+    get_url:                     #(this module downloads files from HTTP, HTTPS, or FTP to the remote server.)
+      url: https://downloads.apache.org/tomcat/tomcat-8/v8.5.65/bin/apache-tomcat-8.5.65.tar.gz
+      dest: /opt
+
+  - name: untar apache packages 
+    unarchive:                   #(The unarchive module unpacks an archive)
+      src: /opt/apache-tomcat-8.5.65.tar.gz
+      dest: /opt
+      remote_src: yes        #(if we dont specify remote_src,it looks for src-tar or zip file in the local                                                                                                       # system)
+  - name: add execution permissions on startup.sh file 
+    file:
+      path: /opt/apache-tomcat-8.5.65/bin/startup.sh 
+      mode: 0777
+ 
+  - name: start tomcat services 
+    shell: nohup ./startup.sh         #(shell module starts/executes shell scripts...it is like command module)
+    args:                             #(args to switch particular directory) 
+     chdir: /opt/apache-tomcat-8.5.65/bin

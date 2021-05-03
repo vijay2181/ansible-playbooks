@@ -1,0 +1,9 @@
+---
+- name: this playbook creates a file
+  hosts: all	#(list of host)
+  become: true	#(it become root) 
+  tasks:
+  - name: creating a file 
+    file:
+     path: /home/ansadmin/demofile
+     state: absent

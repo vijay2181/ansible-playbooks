@@ -1,0 +1,10 @@
+---
+- name: this playbook is to create user
+  hosts: all	   #(list of host)
+  become: true	   #(it become root)
+  vars:                  #(it should be indented on same line of hosts or tasks)
+    user: anuganti
+  tasks:
+  - name: creating user anuganti
+    user:
+      name: "{{ user }}"      #(defining "user" variable)

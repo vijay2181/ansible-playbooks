@@ -1,0 +1,14 @@
+--- 
+- name: this playbook is to install httpd package and run the service 
+  hosts: webserver	#(list of hosts of rhel flavour)
+  become: true	   #(it become root) 
+  tasks:
+  - name: install package          #(to install we will use yum module)
+    yum:
+      name: httpd 
+      state: installed
+
+  - name: start httpd service      #(to start the service we will use 
+    service:                                 #another service module)
+      name: httpd 
+      state: started        

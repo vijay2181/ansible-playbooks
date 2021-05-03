@@ -1,0 +1,18 @@
+---
+- name: this playbook is to install Apache package and run the service 
+  hosts: appserver	#(list of hosts on ubuntu)
+  become: true	#(it become root) 
+  gather_facts: no
+  tasks:
+  - name: install package 
+    apt:
+      name: apache2
+      state: present 
+    notify: start Apache
+
+  handlers:
+  - name: start Apache 
+    service:
+     enabled: yes
+     name: apache2
+     state: started

@@ -1,0 +1,14 @@
+--- 
+- name: this playbook is to uninstall httpd   
+  hosts: webserver	#(list of hosts of rhel flavour)
+  become: true	        #(it become root) 
+  tasks:
+  - name: stop httpd service  
+    service:
+      name: httpd 
+      state: stopped
+
+  - name: uninstall httpd service 
+    yum:
+      name: httpd 
+      state: removed

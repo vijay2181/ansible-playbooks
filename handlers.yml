@@ -1,0 +1,15 @@
+---
+- name: this playbook is to install httpd package and run the service 
+  hosts: webserver	#(list of hosts of rhel flavours)
+  become: true	#(it become root) 
+  tasks:
+  - name: install package 
+    yum:
+     name: httpd 
+     state: present 
+    notify: start httpd service       #(notify should be placed on same line of                           #module, notify and handlers names should be same)
+  handlers:
+  - name: start httpd service 
+    service:
+     name: httpd
+     state: started

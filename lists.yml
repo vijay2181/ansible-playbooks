@@ -1,0 +1,9 @@
+---
+- name: this playbook is to install multiple packages 
+  hosts: webserver	#(list of hosts for rhel)
+  become: true	        #(it become root) 
+  tasks:
+  - name: install packages
+    yum:
+      name: ['git', 'make', 'wget', 'telnet', 'gzip'] 
+      state: installed

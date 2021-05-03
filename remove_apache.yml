@@ -1,0 +1,16 @@
+---
+- name: this playbook is to install Apache package and run the service 
+  hosts: appserver	#(list of hosts of ubuntu)
+  become: true	#(it become root) 
+  tasks:
+  - name: stop apache2 service 
+    service:
+     name: apache2 
+     state: stopped
+
+  - name: uninstall apache2
+    apt:
+     name: apache2 
+     state: absent  
+  
+

@@ -1,0 +1,28 @@
+---
+- name: this playbook is to remove httpd and Apache package
+  hosts: all	   #(list of hosts)
+  become: true	   #(it become root) 
+  tasks:
+  - name: stop httpd service  
+    service:
+      name: httpd 
+      state: stopped
+    when: ansible_os_family == "RedHat"
+
+  - name: uninstall httpd service 
+    yum:
+      name: httpd 
+      state: removed
+    when: ansible_os_family == "RedHat"
+
+  - name: stop apache2 service
+    service:
+      name: apache2
+      state: stopped
+    when: ansible_os_family == "Debian"
+  - name: uninstall apache2
+    apt:
+      name: apache2
+      state: absent
+    when: ansible_os_family == "Debian"
+

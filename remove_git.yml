@@ -1,0 +1,9 @@
+--- 
+- name: this playbook is to uninstall git 
+  hosts: webserver	#(list of hosts of rhel flavour)
+  become: true	        #(it become root) 
+  tasks:
+  - name: uninstall git 
+    yum:
+      name: git
+      state: removed

@@ -1,0 +1,9 @@
+---
+- name: this playbook is to install packages
+  hosts: webserver     #(list of hosts for rhel flavour)
+  become: true   #(it become root) 
+  tasks:
+  - name: install package 
+    yum:
+     name: git  
+     state: installed

@@ -1,0 +1,12 @@
+---
+- name: ansible playbook to copy a file
+  hosts: all	#(list of host)
+  become: true	#(it become root) 
+  tasks:
+  - name: copy a file 
+    copy:
+     src: /opt/index.html	#(where to copy)
+     dest: /home/ansadmin	#(where to paste)
+     mode: 0777      #	(permissions)
+     owner: vijay               #(to which owner you want to give the file,make 
+                                  #  sure user already exists)

@@ -1,0 +1,7 @@
+---
+- hosts: all	#(list of host)
+  become: true	#(it becomes root) 
+  tasks:
+  - name: creating user vijay   # (name is a statement)
+    user: name=vijay
+
