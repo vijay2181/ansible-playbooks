@@ -1,0 +1,1864 @@
+                                         ANSIBLE FOR DEVOPS ENGINEERS-VIJAY
+                                      XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+
+
+WHAT IS ANSIBLE:-
+==================
+Radically simple opensource IT automation engine
+
+ansible automates:
+-configuration management
+-provisioning
+-application deployment
+-orchestration
+
+ansible is simple
+                  -human readable
+                  -no special code skills
+                  -tasks executed in order
+ansible is powerful
+                  -configuration
+                  -app deployment
+                  -provisioning
+                  -orchestration
+ansible is agentless
+                  -uses openssh
+                  -secure
+ansible is efficient,opensource,flexible
+
+
+ansible terminology:-
+======================
+control node:-
+-any machine with ansible installed
+managed nodes:-
+-the network devices(servers) you manage with ansible
+inventory:-
+-a list of managed nodes,an inventory file is also sometimes called a "hostfile"
+
+
+
+Ansible Installation:-
+=======================
+Ansible is an open-source automation platform. It is very, very simple to set up and yet powerful. Ansible can help you with configuration management, application deployment, task automation.
+
+Pre-requisites:-
+------------------
+An AWS EC2 instance (on Control node)
+Installation steps:
+on Amazon EC2 instance
+
+1.Install python and python-pip
+
+yum install python
+yum install python-pip
+
+2.Install ansible using pip check for version
+
+pip install ansible
+ansible --version
+
+3.Create a user called ansadmin (on Control node and Managed host)
+
+useradd ansadmin
+passwd ansadmin
+
+4.Below command grant sudo access to ansadmin user. But we strongly recommended using "visudo" command if you are aware vi or nano editor. (on Control node and Managed host)
+
+echo "ansadmin ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+
+5.Log in as a ansadmin user on master and generate ssh key (on Control node)
+
+ssh-keygen
+
+6.Copy keys onto all ansible managed hosts (on Control node)
+
+ssh-copy-id ansadmin@<target-server>
+
+7.Ansible server used to create images and store on docker registry. Hence install docker, start docker services and add ansadmin to the docker group.
+
+yum install docker
+
+# start docker services 
+service docker start
+service docker start 
+
+# add user to docker group 
+usermod -aG docker ansadmin
+
+8.Create a directory /etc/ansible and create an inventory file called "hosts" add control node and managed hosts IP addresses to it.
+
+Validation test:-
+-------------------
+Run ansible command as ansadmin user it should be successful (Master)
+ansible all -m ping
+
+
+
+PREPARING ANSIBLE(MASTER) SYSTEM ON AWS(AMAZON LINUX):-
+===================================
+steps:-
+1.setup ec2 instance
+2.setup hostname
+3.create ansadmin user
+4.add user to sudoers file
+5.generate ssh keys
+6.enable password based login
+7.install ansible
+
+-security group:- open 80(for httpd,apache2),22(ssh communication),8080(custom port for tomcat) ports
+
+sudo yum update
+
+sudo -i
+
+hostname ansible-master ---changes temporarly
+
+vi /etc/hostname ---changes permanantly
+Reboot
+
+useradd ansadmin
+
+passwd ansadmin
+
+visudo
+## Allow root to run any commands anywhere
+root    ALL=(ALL)       ALL
+ansadmin ALL=(ALL)      NOPASSWD: ALL
+save
+
+generate keys for ansadmin:-
+sudo - su ansadmin
+ssh-keygen
+enter
+enter
+enter
+enter
+cd ./ssh 
+ls
+id_rsa  id_rsa.pub
+we need to copy publickey to the target systems
+privatekey is used to connect with the publickey
+exit back to root user
+
+enable password based login:-
+vi /etc/ssh/sshd_config
+PasswordAuthentication yes
+save
+service sshd restart
+now,we enabled password based authentication to this system
+
+install ansible on this system:-
+to install ansible through pip,we need to install python,python-pip
+-yum install python
+-yum install python-pip
+-pip install ansible
+-ansible --version
+you will get config file = None
+
+remember that if we install ansible with pip,by default we won't get ansible.cfg file,hostfile,ansible directory in the /etc folder,we need to manually copy the .cfg file and create ansible folder.
+If installing Ansible from a package manager,first we need to enable epel.repo and  the latest ansible.cfg file should be present in /etc/ansible, possibly as a .rpmnew file (or other) as appropriate in the case of updates.
+
+If you installed Ansible from pip or from source, you may want to create this file in order to override default settings in Ansible.
+
+switch to ansadmin user
+mkdir /etc/ansible
+we can download config file from official website
+google "ansible configuration file"
+you will be redirected to 
+https://github.com/ansible/ansible/blob/devel/examples/ansible.cfg
+copy the entire file and paste it in
+vi ansible.cfg
+touch hosts
+
+SETTING ANSIBLE NODE(RHEL)
+=============================
+steps:-
+1.setup ec2-redhat machine
+2.setup hostname
+3.create ansadmin user
+4.add user to sudoers file
+5.enable password based login
+follow the same procedure as ansible master setup
+use existing SG ansadmin-SG
+
+
+ADDING RHEL MANAGED NODE TO ANSIBLE MASTER:-
+=============================================
+
+we need to add rhel server private ip/public ip the inventory/hosts file.its better to add private ip because publicip will keeps on changing when the server reboots.
+-copy the private ip from rhel server and paste it in the inventory file.it will communicate with the privateip within the environment.
+-we need to switch to ansadmin user because we need to copy the ssh keys to target systems/nodes to enable passwordless authentication.
+-goto master server
+-sudo su - ansadmin
+- ssh-copy-id 172.31.89.158
+-it will ask password for copying
+- ssh 172.31.89.158
+- you will be logged into sysadmin user of rhel server
+
+Ad-hoc commands:-
+------------------l
+https://docs.ansible.com/ansible/latest/user_guide/intro_adhoc.html
+
+An Ansible ad-hoc command uses the /usr/bin/ansible command-line tool to automate a single task on one or more managed nodes. Ad-hoc commands are quick and easy, but they are not reusable. So why learn about ad-hoc commands first? Ad-hoc commands demonstrate the simplicity and power of Ansible. 
+
+syntax  ---   $ ansible [pattern] -m [module] -a "[module options]"
+
+- "-m" specifies module
+- "-a" specifies attribute
+
+-different modules through which ad-hoc commands implemented:-
+ping
+command
+stat
+yum
+user
+setup
+
+ansible all -m ping
+-you will get ping response from the node
+-"all" specifies whatever the servers present in hosts file
+
+
+
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+
+
+section3:-  ANSIBLE COMPONENTS:-
+=========== ====================
+
+1.ANSIBLE ADHOC COMMANDS:-
+========================
+
+ansible all -m command -a "uptime"
+
+ansible all -m command -a "date"
+
+-by using command module, you can execute unix commands on remote nodes
+
+ansible all -m stat -a "path=/etc/hosts"
+
+-stats module defines which file do you what to stat,wheather that file exists or not
+
+ansible all -m yum -a "name=git" -b 
+
+-yum module is used install packages on remote nodes
+
+-  "-b" specifies to become root user
+
+ansible all -m user -a "name=vijay" -b
+
+-user module creates user
+
+ansible all -m setup 
+
+-it gives entire system info about your managed nodes, it doesnt require any attributes 
+
+note:- if you do not specify the module,by default it takes command module
+
+ like   [ ansible all -a "uptime" ]
+
+if you dont want to use command module as default module, we can update the settings in ansible.cfg file
+
+
+2.ANSIBLE INVENTORY:-
+===================
+according to the documentation,Ansible works against multiple managed nodes or "hosts" in your infrastructure at the same time,using a list or group of lists known as inventory.ansible can perform tasks on list of servers or group of servers.
+
+-inventory file is a collection of hosts(nodes) which are manages by ansible.The default inventory file is present in /etc/ansible directory
+
+-hosts information can be defines in 3 ways
+i)we can define in default location: /etc/ansible/hosts
+ii)we can use -i option if we go with custom hosts file in any location while running the command: ansible -i my_hosts 
+   "-i" stands for inventory
+iii)we can define in ansible.cfg file
+
+
+
+go to ansible master:-
+
+cat /etc/ansible/hosts
+all the ips of nodes are present
+
+ansible all -m ping
+
+lets create a custom inventory file
+
+pwd
+vi my_hosts
+add one server ip
+i would like to run ping command on this custom inventory not on default inventory
+
+ansible all -m ping -i my_hosts 
+or 
+ansible all -m ping -i /home/my_hosts
+
+if you do not specify the custom inventory,then it would take from ansible.cfg default configurations block,you can also change the custom settings but if we use default inventory file we will have few challanges...for example,in our team we have 5 members and each guy is executing his playbook on different servers,if that is the case, you are updating the default inventory file with the servers which you want to do some tasks using ansible, similar way your collegue also trying to update the same hosts file with his inventory, if you execute some commands without noticing that one,it is going to run on the system which you specified and your collegue specified, so to overcome this problem,we create our own inventory file
+
+we can create groups in the inventory file
+vi /etc/ansible/hosts
+[rhel]
+172.31.30.140
+[ubuntu]
+172.34.67.123
+
+ansible all -m ping
+- pings all the servers in the inventory file
+-if you want to ping only rhel group servers then
+
+ansible rhel -m ping 
+
+
+3.ANSIBLE CONFIGURATION FILE- ansible.cfg:-
+==========================================
+
+ls -l /etc/ansible/ansible.cfg
+
+whenever we execute ansible commands if we do not specify some information about that command,then it would take default settings from ansible.cfg file
+
+•Ansible configuration file consits of lot of parameters...some of them are
+
+◦inventory
+◦library: it requires some modules,those modules will be searched over here
+◦module_utils: these are also required for modules
+◦remote_tmp: when ever you are going to execute some commands on remote system, it uses this tmp file for tasks
+◦local_tmp: it similarly does same thing to local system
+◦fork: fork nothing but at a particular time, ansible command runs on particular number of systems. If there were 10 systems and if we mention fork=5, first ansible command runs on first 5 systems after that it will run on other 5 systems
+◦ask_pass: while logging in to client system do you want to ask password or not. Default its false if its true            you need to provide password while loging on to client system
+◦Default: default module to use when running ad-hoc commands
+
+◦privilage_escalation:
+▪become=false: when you run any command don't execute as a root user execute as a normal user
+▪become_method=sudo: if you want to become a root how do u become a root
+▪become_ask_pass= false: if you want to become a root do you need password or not
+
+- we can define our own ansible.cfg file
+changes that are made and used in a configuration file  will be searched in following priority order 
+
+◦ANSIBLE_CONFIG	(environment variable if set) --creating ansible.cfg file and exporting with env variable
+◦ansible.cfg	(in the current directory)
+◦~/.ansible.cf	(in the home directory)
+◦the least or low priority goes for file present in default location: /etc/ansible/ansible.cfg 
+
+
+
+4.ANSIBLE MODULES:-
+===================
+•A module is a reusable, standalone script that ansible runs on your behalf, either locally or remotely
+•Modules interact with your local machine, an API or a remote system to perform specific tasks like
+ -Creating users
+ -Installing packages
+ -Updating Configurations
+ -Spinning up instances	Etc..
+•Modules are the programs that perform the actual work i.e the tasks of a play
+•The command “ansible-doc -l” show all the list of modules
+•To check how many number of modules are present, you can use  “ansible-doc -l | wc”
+  - around 3300 plus modules are present
+
+
+
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+
+
+SECTION 4:- ANSIBLE PLAYBOOKS:-
+=========== ====================
+
+Create your first ansible playbook:-
+=====================================
+Playbook:-
+Playbook are essentially sets of instructions (plays) that you send to run on single target or group of targets or (hosts).
+
+ansible Playbook
+•A playbook is a text file written in YAML (YAML Aint Markup Language) format, and is normally saved as .yaml 
+•An item in a YAML list starts with a single dash followed by a space
+•hosts and tasks are mandatory items in a playbook
+•The playbook primarily uses indentation with space characters to indicate the structure of its data
+•Modules are used to perform tasks (ansible all -m user -a “name=john” -b)
+•comment start with #
+
+lets convert ad-hoc command into script
+
+[ ansible all -m user -a “name=john” -b ] -- ad-hoc command
+
+creating user by using yaml filename: create_user.yml :-
+---------------------------------------------------------
+
+---
+- hosts: all	(list of host)
+  become: true	(it become root) 
+  tasks:
+  - user: name=vijay	(user module to create a user)
+
+to run above script use command: ansible-playbook create_user.yml 
+
+
+Setup additional managed node:-
+================================
+
+ansible master (amazon linux)-------ansible node1 (RHEL)
+                                    ansible node2 (ubuntu) 
+
+Setup managed nodes
+1.Setup EC2 instance ( ubuntu managed node)
+2.Setup hostname
+3.Create ansadmin user
+4.Add user user to sudoers file
+5.Enable password based login
+6.Add these above IP address to ansible system
+7.copy server ssh keys to nodes
+8.Test whether the it is going to log ssh with out password
+9.run the command “ansible all -m ping -i hosts” to check ping connections
+
+
+for ubuntu machine:-
+------------------
+apt update -y
+
+useradd ansadmin -d /home/ansadmin -m
+
+passwd ansadmin
+
+-because in ubuntu we cant add user as "useradd ansadmin", we need users home directory because we need to copy  ssh keys from the master for passwordless authentication
+
+visudo
+# User privilege specification
+root    ALL=(ALL:ALL) ALL
+ansadmin ALL=(ALL)  NOPASSWD: ALL
+-after changing
+ press ctrl O
+ press enter
+ press ctrl x
+ 
+vi /etc/ssh/sshd_config
+PasswordAuthentication yes
+service ssh restart
+
+take the ubuntu server ip
+-login to ansible master
+- sudo su - ansadmin
+- cd /etc/ansible
+- vi hosts
+[webserver]
+172.31.89.158  - rhel ip
+[appserver]
+172.31.21.212  - ubuntu ip
+
+switch to ansadmin
+ssh-copy-id 172.31.21.212
+asks passwdord for copying keys from ansible master to ubuntu slave
+
+ansible all -m ping
+
+
+Run a Ansible playbook:-
+=========================
+
+•For above script run the command “ansible-playbook -i hosts create_user.yml”
+•The output has few things to observe
+◦PLAY [ALL]: running playbook on all nodes
+◦TASK [gathering Facts]: gather facts is equal to set of command. It is going to pull the target system related  information by using gather facts.
+◦TASK [user]: it shows which task we are running . We are running now user task. If any change happens output     comes in yellow colour. If there is no change it comes in green colour with respect to IP address
+◦PLAY RECAP: it contains List of the servers which belongs to all groups.
+▪OK means number of playbooks executed are all fine.
+▪Changed means what changes happen on nodes
+▪unreachable
+▪failed
+▪skipped
+▪rescued
+▪ignored
+
+•In yaml file if we include name,which is nothing but a statement. It is useful when we output and get clear information of what that particular task is used for.
+
+creating user by using yaml filename: create_user.yml :-
+
+---
+- hosts: all	(list of host)
+  become: true	(it becomes root) 
+  tasks:
+  - name: creating user vijay    (name is a statement)
+    user: name=vijay
+
+or 
+- user: 
+   name: vijay           - if you want to use name in next line we should follow this synatx 
+
+this is how we can make ansible output more readable
+
+
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+
+
+SECTION 5: HIGH LEVEL OVERVIEW OF MODULES:-
+===========================================
+
+Yum Module – install packages
+===============================
+ 
+•creating ansible-playbook by using yum module
+•vi install_packages.yml
+ 
+---
+- name: this playbook is to install packages
+  hosts: webserver	(list of hosts for rhel flavour)
+  become: true	(it become root) 
+  tasks:
+  - name: install package 
+    yum:
+     name: git  
+     state: installed
+
+ansible-playbook install_packages.yml
+
+note:- if you do not specify become: true in playbook but you can still specify while running the playbook with
+"ansible-playbook install_packages.yml -b "
+
+
+File Module – create/remove a file/directory:-
+=============================================== 
+
+example1:
+•creating a file ansible-playbook by using file module
+•vi create_file.yml
+
+---
+- name: this playbook creates a file
+  hosts: all	(list of host)
+  become: true	(it become root) 
+  tasks:
+  - name: creating a file 
+    file:
+     path: /home/ansadmin/demofile 
+     state: touch
+
+example2:
+•creating a directory ansible-playbook by using file module
+•vi create_directoty.yml
+
+---
+- name: this playbook creates a file
+  hosts: all	(list of host)
+  become: true	(it become root) 
+  tasks:
+  - name: creating a file 
+    file:
+      path: /home/ansadmin/dir1  
+      state: directory
+
+example3:
+•removing a file by using ansible-playbook by using file module
+•vi create_directoty.yml
+
+---
+- name: this playbook creates a file
+  hosts: all	(list of host)
+  become: true	(it become root) 
+  tasks:
+  - name: creating a file 
+    file:
+      path: /home/ansadmin/demofile
+      state: absent
+
+
+Copy Module-copy a file on to managed nodes:-
+===============================================
+•Copy Module is used to copy files from one location to another location
+•in this case we are used to copy file from master server to node
+
+vi index.html
+<h1>welcome to vijay's webpage</h1>
+
+example:
+•copying a file by using ansible-playbook by using file module
+•vi copy_file.yml
+
+---
+- name: ansible playbook to copy a file
+  hosts: all	(list of host)
+  become: true	(it become root) 
+  tasks:
+  - name: copy a file 
+    copy:
+     src: /opt/index.html	(where to copy)
+     dest: /home/ansadmin	(where to paste)
+     mode: 0777	(permissions)
+     owner: vijay               (to which owner you want to give the file,make sure user already exists)
+
+•To check the file: ansible-playbook -i hosts copy_file.yml --check
+•To check the syntax: ansible-playbook -i hosts copy_file.yml --syntax-check
+
+
+
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+
+
+SECTION 6: MULTITASK ANSIBLE PLAYBOOKS:-
+=========================================
+
+INSTALL APACHE ON RHEL:-
+========================
+on RHEL flavours:- httpd    - service httpd start
+on ubuntu :- apache2        - service apache2 start
+
+•installing package by using ansible-playbook by using yum module
+•vi install_package.yml
+
+---
+- name: this playbook is to install httpd package and run the service
+  hosts: webserver      #(list of hosts of rhel flavour)
+  become: true     #(it become root)
+  tasks:
+  - name: install package          #(to install we will use yum module)
+    yum:
+      name: httpd
+      state: installed
+
+  - name: start httpd service      #(to start the service we will use
+    service:                                 #another service module)
+      name: httpd
+      state: started
+
+do
+ps -ef | grep httpd
+rpm -qa | grep httpd
+ansible-playbook install_package.yml
+sudo service httpd status    -- to check status of httpd on rhel node server
+
+copy the rhel server public ip
+54.32.4.2:80  -- httpd will be accessed
+
+
+next we need to uninstall httpd,for this we will go in reverse order,first we need to stop the service and next we need to remove the package.because generally after stopping the service only we can remove the package.
+
+•vi uninstall_httpd.yml
+
+--- 
+- name: this playbook is to uninstall httpd   
+  hosts: webserver	#(list of hosts of rhel flavour)
+  become: true	        #(it become root) 
+  tasks:
+  - name: stop httpd service  
+    service:
+      name: httpd 
+      state: stopped
+
+  - name: uninstall httpd service 
+    yum:
+      name: httpd 
+      state: removed
+
+ansible-playbook unistall_httpd.yml
+ps -ef | grep httpd
+rpm -qa | grep httpd
+
+
+Install Apache on ubuntu:-
+============================
+•installing package by using ansible-playbook by using apt module
+•vi install_apache2.yml
+
+---
+- name: this playbook is to install Apache package and run the service 
+  hosts: appserver	#(list of hosts of ubuntu)
+  become: true	#(it become root) 
+  tasks:
+  - name: install apache2
+    apt:
+     name: apache2 
+     state: present   #(present or installed, for ubuntu we would go for present)
+
+  - name: start apache2 service 
+    service:
+     name: apache2 
+     state: started
+
+ansible-playbook install_apache2.yml
+ps -ef | grep apache2
+rpm -qa | grep apache2
+
+copy the ubuntu server public ip
+54.32.4.2:80  -- apache2 will be accessed
+
+
+
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+
+
+Section7: Notify and Handlers:-
+===============================
+
+•handlers has the ability to notify when some thing change happens in the template
+•handlers will be executed only if there is change
+
+•I have seen installing a package by using yum module with respect to notify and handlers
+
+•vi install_package.yml
+
+i want to start my httpd service whenever httpd is installed,otherwise dont start the service,so we need to handle this situation
+ 
+---
+- name: this playbook is to install httpd package and run the service 
+  hosts: webserver	#(list of hosts of rhel flavours)
+  become: true	#(it become root) 
+  tasks:
+  - name: install package 
+    yum:
+      name: httpd 
+      state: present 
+    notify: start httpd service       #(notify should be placed on same line of module, notify and handlers                                                                             names should be same)
+
+  handlers:
+  - name: start httpd service 
+    service:
+      name: httpd
+      state: started
+
+ansible-playbook install_package.yml
+
+- if we re-execute this playbook,httpd is already installed, so notify will not notify to handler to handle the situation because there is no change in the template.so handler can handle if your notified task is executed.if notify is not doing anything, it wont touch.
+
+
+
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+
+
+Section 8: Gather facts:-
+==========================
+
+How gather facts works:-
+
+•gathering facts is used to retrieve the system information of our remote nodes
+ - gathering facts is the additional task executed while running the playbook
+•the command “ansible all -m setup” gives information about the nodes like IP address, volumes, CPU, kernel versions etc
+•if you want to disable gathering facts,we need to Add “gather_facts: no” in the yaml file
+
+---
+- name: this playbook is to install Apache package and run the service 
+  hosts: appserver	#(list of hosts on ubuntu)
+  become: true	#(it become root) 
+  gather_facts: no
+  tasks:
+  - name: install package 
+    apt:
+      name: apache2
+      state: present 
+    notify: start Apache
+
+  handlers:
+  - name: start Apache 
+    service:
+      name: apache
+      state: started
+
+but sometimes why we should restrict gathering of facts?
+because,Assume that your environment have 100s of servers. if you are collecting each system information then,it will take longer time to run your ansible playbook.so the performance will be degraded,this is the reason why we should avoid gathering of facts sometimes
+
+
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+
+
+Section9: conditions:-
+=======================
+
+When condition:-
+================
+
+•if there are two different types of server flavours, "When" condition helps for a particular server to run particular task.so inorder to do this, you should write a playbook so that depending on OS it should take decisions
+
+vi install_apache_httpd.yml
+
+---
+- name: this playbook is to install httpd and apache
+  hosts: all
+  become: true
+  tasks:
+  - name: install httpd
+    yum:
+      name: httpd
+      state: installed
+    when: ansible_os_family == "RedHat"    #("when" should be placed at the same line of module)
+
+  - name: install apache2
+    apt:
+      name: apache2
+      state: present
+    when: ansible_os_family == "Debian"
+
+
+  - name: start httpd
+    service:
+      name: httpd
+      state: started
+    when: ansible_os_family == "RedHat"
+  
+  - name: start apache2
+    service:
+      name: apache2
+      state: started
+    when: ansible_os_family == "Debian"
+  
+
+  
+ansible-playbook install_apache_httpd --check
+ansible-playbook install_apache_httpd
+
+copy the rhel server public ip
+54.32.4.2:80  -- httpd will be accessed
+
+copy the ubuntu server public ip
+54.32.4.2:80  -- apache2 will be accessed
+
+this is how we can write ansible playbook to execute depending upon the OS flavour
+
+
+Uninstall Apache using When condition:-
+==========================================
+next we need to uninstall httpd and apache,for this we will go in reverse order,first we need to stop the services and next we need to remove the packages.because generally after stopping the service only we can remove the package.
+
+vi unintsall_httpd_apache
+
+---
+- name: this playbook is to remove httpd and Apache package
+  hosts: all	   #(list of hosts)
+  become: true	   #(it become root) 
+  tasks:
+  - name: stop httpd service  
+    service:
+      name: httpd 
+      state: stopped
+    when: ansible_os_family == "RedHat"
+
+  - name: uninstall httpd service 
+    yum:
+      name: httpd 
+      state: removed
+    when: ansible_os_family == "RedHat"
+
+  - name: stop apache2 service
+    service:
+      name: apache2
+      state: stopped
+    when: ansible_os_family == "Debian"
+  - name: uninstall apache2
+    apt:
+      name: apache2
+      state: absent                          #(for ubuntu it must be absent)
+    when: ansible_os_family == "Debian"
+
+  
+ansible-playbook uninstall_apache_httpd --check
+
+
+
+Adding copy task to Apache playbook:-
+======================================
+
+•create a file and add content to file
+•vi index.html
+<h1>welcome to vijay's webpage</h1>
+
+-we need to copy this file to target systems
+vi install_httpd_apache.yml
+
+---
+- name: this playbook is to install httpd and apache
+  hosts: all
+  become: true
+  tasks:
+  - name: install httpd
+    yum:
+      name: httpd
+      state: installed
+    when: ansible_os_family == "RedHat"    #("when" should be placed at the same line of module)
+
+  - name: install apache2
+    apt:
+      name: apache2
+      state: present
+    when: ansible_os_family == "Debian"
+
+
+  - name: start httpd
+    service:
+      name: httpd
+      state: started
+    when: ansible_os_family == "RedHat"
+  
+  - name: start apache2
+    service:
+      name: apache2
+      state: started
+    when: ansible_os_family == "Debian"
+
+
+  - name: copy index.html 
+    copy:
+      src: /opt/index.html  
+      dest: /var/www/html 
+      mode: 0666
+
+anisble-playbook install_httpd_apache.yml
+
+copy the rhel server public ip
+54.32.4.2:80  -- httpd will be accessed
+
+copy the ubuntu server public ip
+54.32.4.2:80  -- apache2 will be accessed
+
+
+
+Lists and with_items:-
+=======================
+
+•in this i have seen how to install multiple packages with a single task
+- so far we are using task for installing a single package
+- we can install mutliple packages with single task by using lists and with_items
+- in older versions we would go for with_items but soon it is going to become legacy in updated versions
+
+•They are 2 methods to install multiple packages with a single task 
+ 1.using list,we can specify multiple packages
+ 2.using with_items...it is exactly similar to for loop
+ 
+First method:-
+
+---
+- name: this playbook is to install multiple packages 
+  hosts: webserver	#(list of hosts for rhel)
+  become: true	        #(it become root) 
+  tasks:
+  - name: install packages
+    yum:
+      name: ['git', 'make', 'wget', 'telnet', 'gzip'] 
+      state: installed
+
+Second method:-
+
+---
+- name: this playbook is to install multiple packages 
+  hosts: webserver	(list of hosts for rhel)
+  become: true	(it becomes root) 
+  tasks:
+  - name: install packages 
+    yum:                                                       name=item
+      name: "{{ item }}"           #(in ansible we define variables with double quotes and flower braces)
+      state: installed 
+    with_items:                 #(with_items should be placed same line of module..it is like for loop)
+      - git
+      - make
+      - wget
+
+
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+
+
+Section 10: ansible Variables:-
+=================================
+generally,variable is something which stores value assigned to it
+
+Ansible Variables:-
+===================
+there are different ways in which we can define variables in ansible :-
+•we can Define ansible variables within the playbook
+•Passing from external files
+•Passing from hosts inventory
+•passing while running playbook
+•Using group_vars or hosts_vars and so on...
+-see ansible variables documentation
+
+according to doumentation, the purpose of ansible variable is,
+While automation exists to make it easier and to make things repeatable, all systems are not exactly alike; some may require configuration that is slightly different from others.
+
+in order to implement this i have 
+
+•Creating user by using variable
+•vi create_user.yml
+
+suppose a new member joins in the team,we need to create a user,instead of everytime hardcoding the values in playbook,we can define variables to overcome it. i have taken 3 methods
+
+method1:-
+---------
+vi craete_user.yml
+
+---
+- name: this playbook is to create user
+  hosts: all	   #(list of host)
+  become: true	   #(it become root)
+  vars:            #(it should be indented on same line of hosts or tasks)
+    user: vijay
+  tasks:
+  - name: creating user vijay
+    user:
+      name: "{{ user }}"     #(defining "user" variable)
+
+- double quotes are optional if you define variable after some value ex:- name: add user {{ user }}
+
+ansible-playbook craete_user.yml
+
+-by this playbook,assume that in your team a new user got joined,now we dont need to change all the tasks where-ever it is specified.so we can just replace the variable value.(i.e user: vijay).but whenever new user is joining,we are always modifying the playbook..but i do not need to modify the ansible playbook and create a user.i need to get variable-value from the external file where we would only modify the file not the playbook.so we need to create a seperate file and from there we need to pass the user-name
+
+method 2:-
+-----------
+-create a file user.yml
+- vi user.yml
+  user: ajay
+-now i need to tell my playbook that variable is coming from user.yml file
+
+•vi create_user.yml
+
+---
+- name: this playbook is to create user from external file
+  hosts: all	#(list of host)
+  become: true	#(it become root) 
+  vars_files:         #(this is how we can define external file name)
+   - user.yml          #(file name..it will call user from external file)
+  tasks:
+   - name: creating user {{ user }}
+     user:
+       name: "{{ user }}"
+
+this is how we can pass user name from the externel source
+
+method 3:-
+----------
+•we can also pass the variable while running ansible commands itself.
+- if we pass variable like this,those variables will have highest priority or higher precedence
+
+•command:-   ansible-playbook – i hosts create_user.yml -e "user=rythoms"
+
+•we also have another command:
+◦ansible-playbook – i hosts create_user.yml --extra-vars "user=rythoms"
+ 
+
+
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+
+
+Section11: Additional Concepts:-
+=================================
+ 
+Converting shell commands into a Ansible playbook:-
+====================================================
+to implement this,i have created a playbook for 
+
+•installation and configuration of tomcat by using ansible playbook
+•vi tomcat.yml
+
+---
+- name: setup tomcat 
+  hosts: all
+  become: true 
+  tasks:
+  - name: install java
+    yum:
+      name: java                  #(for rhel it is "yum install java")
+      state: installed
+    when: ansible_os_family == "RedHat"
+
+
+  - name: install java on ubuntu
+    apt:
+      name: default-jdk              #(for ubuntu it is default-jdk)
+      state: present
+    when: ansible_os_family == "Debian"
+
+  - name: download tomcat packages 
+    get_url:                     #(this module downloads files from HTTP, HTTPS, or FTP to the remote server.)
+      url: https://downloads.apache.org/tomcat/tomcat-8/v8.5.65/bin/apache-tomcat-8.5.65.tar.gz
+      dest: /opt
+
+  - name: untar apache packages 
+    unarchive:                   #(The unarchive module unpacks an archive)
+      src: /opt/apache-tomcat-8.5.65.tar.gz
+      dest: /opt
+      remote_src: yes        #(if we dont specify remote_src,it looks for src-tar or zip file in the local                                                                                                       # system)
+  - name: add execution permissions on startup.sh file 
+    file:
+      path: /opt/apache-tomcat-8.5.65/bin/startup.sh 
+      mode: 0777
+ 
+  - name: start tomcat services 
+    shell: nohup ./startup.sh         #(shell module starts/executes shell scripts...it is like command module)
+    args:                             #(args to switch particular directory) 
+     chdir: /opt/apache-tomcat-8.5.65/bin
+
+- "nohup" is used to execute script in the background continusouly..because if we exit from the current directory, this script does not work  
+
+ansible-playbook tomcat.yml 
+
+on the remote nodes:-  ps -ef | grep tomcat
+
+copy the rhel server public ip
+54.32.4.2:8080  -- tomcat will be accessed
+
+copy the ubuntu server public ip
+54.32.4.2:8080  -- tomcat will be accessed
+
+
+
+Using tags in a playbook:-
+===========================
+•usually tags were useful if you want to segregate specific tasks from playbook
+
+vi install_httpd_apache.yml
+
+---
+- name: this playbook is to install httpd and apache package and run the service 
+  hosts: all	
+  become: true	
+  tasks:
+  - name: install httpd 
+    yum:
+      name: httpd
+      state: installed
+    when: ansible_os_family == "RedHat" 
+    tags: install_httpd                       #(tags should be indented below modules)
+
+  - name: start httpd service 
+    service:
+      name: httpd 
+      state: started
+    when: ansible_os_family == "RedHat" 
+    tags: start_httpd
+
+  - name: install apache2
+    apt:
+      name: apache2 
+      state: present
+    when: ansible_os_family == "Debian" 
+    tags: install_apache2
+     
+  - name: start apache2 service 
+    service:
+      name: apache2 
+      state: started
+    when: ansible_os_family == "Debian" 
+    tags: start_apache2
+     
+  - name: copy index.html 
+    copy:
+      src: /opt/index.html 
+      dest:  /var/www/html 
+      mode: 0666
+
+•if you run that above playbook it will execute all the tasks normally
+•if you mention any tag in running command, it executes task assigned to that specific tag only
+•for example,if we want to execute only install httpd task,then we need to tag that task in the command
+
+◦ansible-playbook -i hosts install_apache_httpd.yml --tags "install_httpd"
+
+•for example we want to execute only start apache2 task,then we need to tag that task in the command
+
+◦ansible-playbook -i hosts install_apache_httpd.yml --tags "start_apache2"
+
+
+
+Error handling in a playbook:-
+===============================
+•Usually while running ansible,it executes all tasks in sequencial manner,if it finds any particular task is failed,it cannot proceed with further tasks. i mean to say that lets assume, i am installing httpd on one server and starting the service, copying the file. In this case if installation is successful and your are trying to start the service,but the service is failed and it cannot go further tasks.so To over come this problem we can use “ingore_errors: yes”
+
+i have written a playbook to implement this
+
+vi install_httpd_apache.yml
+
+---
+- name: this playbook is to install httpd and apache package and run the service 
+  hosts: all	
+  become: true	
+  tasks:
+  - name: install httpd package 
+    yum:
+      name: httpd 
+      state: installed
+    when: ansible_os_family == "RedHat"
+
+  - name: start httpd service 
+    service:
+      name: httpd 
+      state: started
+    when: ansible_os_family == "RedHat"
+
+  - name: install apache2 package 
+    apt:
+      name: apache2 
+      state: present
+    when: ansible_os_family == "Debian" 
+
+  - name: start apache2 service 
+    service:
+      name: apache2 
+      state: started
+    when: ansible_os_family == "Debian"
+
+  - name: copy index.html 
+    copy:
+    src: /opt/index.html 
+    dest:  /var/www/html 
+    mode: 0666
+
+if we execute the above playbook it works fine
+
+if we go to rhel server...[ vi /etc/httpd/conf/httpd.conf ]
+if we go to this conf file and add something in the line with uncommenting.so whenever you add something which is not readable by httpd server, it will going to be fail.
+
+after editing... [ service httpd restart ]
+it will fail after restart..because httpd server cant read the line in conf file
+- if we run the playbook again...it will install httpd but at starting the service ,it will fail..so the tasks which are present after starting the sevice will not execute further..but even though some tasks fails, you would like to continue further with other tasks.so in those cases we would use "ignore_errors" parameter
+
+vi install_httpd_apache.yml
+
+---
+- name: this playbook is to install httpd and apache package and run the service 
+  hosts: all	
+  become: true	
+  tasks:
+  - name: install httpd package 
+    yum:
+      name: httpd 
+      state: installed
+    when: ansible_os_family == "RedHat"
+
+  - name: start httpd service 
+    service:
+      name: httpd 
+      state: started
+    when: ansible_os_family == "RedHat"
+    ignore_errors: yes
+
+  - name: install apache2 package 
+    apt:
+      name: apache2 
+      state: present
+    when: ansible_os_family == "Debian"
+    
+  - name: start apache2 service 
+    service:
+      name: apache2 
+      state: started
+    when: ansible_os_family == "Debian"
+
+  - name: copy index.html 
+    copy:
+      src: /opt/index.html 
+      dest:  /var/www/html 
+      mode: 0666
+
+ansible-playbook install_httpd_apache.yml
+
+eventhough the task is failing,it will ignore and continue further
+ 
+
+
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+
+
+Section 12: Ansible vault:-
+============================
+
+Ansible vault introduction:-
+============================
+Ansible Vault is a feature of ansible that allows you to keep sensitive data such as passwords or keys in encrypted files, rather than plaintext in playbooks or roles
+
+COMMANDS TO ENCRYPT AND DECRYPT DATA USING ANSIBLE-VAULT:-
+-you need to use "ansible-valut" before those commands
+ 
+•Create: to create ansible vault file in the encrypted format   (creates file in encrypted format)
+•view: to view data of encrypted file
+•edit: to edit encrypted file
+•encrypt: to encrypt an unencrypted file    (converts your file into encrypted format)
+•decrypt: to decrypt an encrypted file       (converts your file into normal file which is in encrypted format)
+•--ask-vault-pass: to provide password while running playbook
+•--vault-password-file: to pass a vault password through a file
+•rekey: change the password
+
+GO TO ANSIBLE MASTER SERVER:-
+lab:
+1.create file with encrypted format:-
+•ansible-vault create vault-pass.yml
+◦New vault password:
+◦confirm vault password:
+◦type the script which you want to execute on the openend file
+   password: ansible123
+   - save the file
+•cat vault-pass.yml
+◦gkjhfkjhosjgofjhjlsjdlgijldjlgkjlkjhgflhkgjgljl
+•You can see data in encrypted format
+
+2.To view the actual data of encrypted file
+•ansible-vault view vault-pass.yml
+◦vault password:
+◦you can see view the actual data
+
+3.To edit encrypted data
+•ansible-vault edit vault-pass.yml
+◦vault password
+◦edit content and save
+
+4.To decrypt data
+•ansible-vault decrypt vault-pass.yml
+◦vault password
+•cat vault-pass.yml
+◦you can see data
+
+
+
+Using ansible-vault with git:-
+================================
+•Create a new repo(private) in git  
+  [repo name: valut]
+•clone the repo with user name and password
+ git clone https://github.com/yankils/vault.git
+ - but if i use this url in ansible playbook,i cannot provide username and password that is why,in url itself    we can provide username and password.so we can use 
+
+ git clone https://username:password@<your git hub url>
+
+◦git clone https://jay:jay8899@github.com/jay/vault.git
+
+ provide username and password on above fields..it wont ask for password
+
+•you can see directory will clones after applying git clone
+•go to github repo and create a file in git vault repo [index.html]
+  <h1> ansible vault testing </h1>
+
+•use "git pull" it downloads latest updates 
+•create a ansible playbook to cone the repository to remote nodes:-
+
+
+vi ansible-vault.yml
+
+---
+- name: ansible playbook to test ansible vault 
+  hosts: all
+  become: true 
+  tasks:
+  - name: clone a repo 
+    git:                           (git module to clone a repo)
+      repo: https://jay:jay8899@github.com/jay/vault.git
+      dest: /opt/ansadmin/test-vault                      (creates and clones the repo in test-vault directory)
+
+ansible-playbook ansible-vault.yml --check
+ansible-playbook ansible-vault.yml
+
+•Note: in above playbook we have mentioned the password of git,and by this anyone can access the git account,so to over  come that you can use ansible-vault with respect to variable.you can define a variable in file and pass over  to the playbook.we can replace the value in playbook with the variable.so to implement this,see below playbook
+
+create a encrypted password file by using ansible-vault:-
+
+ansible-vault create vault-pass.yml
+asks for vault password:
+ password: jay8899       ---write in file
+
+vi ansible-vault.yml
+
+---
+- name: ansible playbook to test ansible vault 
+  hosts: all
+  become: true 
+  vars_files: 
+    - vault-pass.yml
+  tasks:
+  - name: clone a repo 
+    git:                           
+      repo: https://jay:{{ password }}@github.com/jay/vault.git
+      dest: /opt/ansadmin/test-vault  
+
+
+ansible-playbook ansible-vault.yml
+error
+
+ansible-playbook ansible-vault.yml --ask-vault-pass
+asks for vault password:                   
+- you need to pass the password while running the command,otherwise this playbook will try to get the   variable from the file but variable file is encrypted.so ansible playbook cannot open that encrpted file
+
+
+if you dont want to provide vault password while running the command,so you can keep your vault password in one file
+- im going to keep my vault password in one file
+vi pass.yml
+abc123
+-now while executing my playbook, instead of providing password,we would just provide the password file
+
+ ansible-playbook ansible-vault.yml --vault-password-file pass.yml
+
+this is how we can pass vault password file on the command itself,this file is used to decrypt vault-pass.yml
+
+
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+
+
+Section13: Ansible Roles:-
+===========================
+Ansible roles introduction:-
+=============================
+
+If we keep on adding tasks on playbook, it grows continuosly and complexity increases,and at some point of time you will lose control on the playbook,so to overcome this we can split our playbook into roles.if you split, your playbooks becomes easy to understand and the advantage of using roles is, roles are re-usable. you can reuse the same task in the other section aswell or other people can use your role
+
+according to documentation,defination of roles is,
+•While it is possible to write a playbook very large file, eventually you will want to reuse files and start to organize things. In ansible, there are three ways to do this: 
+1.includes
+2.imports
+3.roles
+
+- ansible galaxy is a repository which contains predefined roles
+
+•Ansible role is a set of tasks to configure a host to serve a certain purpose like configuring a service. Roles are defined using YAML files with a predefined directory structure. A role directory structure contains directories: defaults, vars, tasks, files, templates, meta, handlers.
+
+inorder to Create a role:-
+ i have converted install_httpd_apache.yml playbook into a role
+•To create a role use the command: ansible-galaxy init <role-name>
+ ansible-galaxy init setup-apache
+
+this command will create the directory structure
+ls
+cd setup-apache
+ls
+defaults files handlers meta tasks templates tests vars
+sudo yum install tree 
+tree
+
+◦tasks/main.yml – this file contains the main list of tasks that the role executes.
+
+◦handlers/main.yml – handlers are nothing but if you are doing a task,and if this task executes,then only your next task should be executed, that handlers we can keep in this file,which may be used within or outside this role.
+
+◦library/my_module.py – it contains modules, which may be used within this role (see Embedding modules and plugins in roles for more information).
+
+◦defaults/main.yml – it contains default variables for the role.for ex:-while running your role, you need to provide variable information.if you dont provide variable information,then it takes from defaults.These variables have the lowest priority when compared to any other variables, and can be easily overridden by any other variables, including inventory variables.
+
+◦vars/main.yml – it contains other variables for the role (see Using Variables for more information).
+
+◦files/main.yml – it contains copy files while running the role or files that the role deploys.ex:-(index.html)
+
+◦templates/main.yml – it contains templates that the role deploys.templates and files both are similar but file it will copy as it is whereas in template you can use variables in the file
+
+◦meta/main.yml – it conatins metadata information for the role, including role dependencies
+
+
+ 
+Adding more tasks to play book-lab:-
+=====================================
+
+
+•vi setup-apache.yml
+
+---
+- name: this playbook is to install httpd and apache package and run the service
+  hosts: all	
+  become: true	
+  tasks:
+  - name: install httpd package 
+    yum:
+      name: httpd 
+      state: installed
+    when: ansible_os_family == "RedHat"
+    notify: start httpd 
+
+  - name: install apache2 package 
+    apt:
+      name: apache2 
+      state: present
+    when: ansible_os_family == "Debian" 
+    notify: start apache2
+    
+  - name: copy index.html 
+    copy:
+      src: /opt/ansible/index.html 
+      dest:  /var/www/html 
+      mode: 0666
+
+  handlers:
+  - name: start httpd 
+    service:
+      name: httpd 
+      state: started
+    when: ansible_os_family == "RedHat" 
+
+  - name: start apache2  
+    service:
+      name: apache2 
+      state: started
+    when: ansible_os_family == "Debian"
+
+ansible-playbook setup-apache.yml 
+
+
+
+
+
+
+
+to change port number of apache to 8081:-
+----------------------------------------
+for this, we will use lineinfile module
+we need to enable 8081 port at SG level
+
+
+•vi setup-apache.yml
+
+---
+- name: this playbook is to install httpd and apache package and run the service 
+  hosts: all	
+  become: true	
+  tasks:
+  - name: install httpd package 
+    yum:
+      name: httpd 
+      state: installed
+    when: ansible_os_family == "RedHat"
+    notify: start httpd 
+
+  - name: install apache2 package 
+    apt:
+      name: apache2 
+      state: present
+    when: ansible_os_family == "Debian"
+    notify: start apache2
+    
+  - name: copy index.html 
+    copy:
+      src: /opt/index.html 
+      dest:  /var/www/html 
+      mode: 0666
+
+  - name: Ensure the default httpd port is 8081
+    lineinfile:
+      path: /etc/httpd/conf/httpd.conf 
+      regexp: '^Listen '
+      insertafter: '^#Listen ' 
+      line: Listen 8081
+    when: ansible_os_family == "RedHat" 
+    notify: restart httpd
+
+  - name: Ensure the default apache2 port is 8081 on ubuntu
+    lineinfile:
+      path: /etc/apache2/ports.conf                        #once we change config file,we need to restart
+      regexp: '^Listen '
+      insertafter: "# /etc/apache2/sites-enabled/000-default.conf"    #  (insert after this line in ports.conf)
+      line: Listen 8081
+    when: ansible_os_family == "Debian" 
+    notify: restart apache2
+
+  handlers:
+  - name: start httpd 
+    service:
+      name: httpd 
+      state: started
+    when: ansible_os_family == "RedHat"  
+
+  - name: start apache2  
+    service:
+      name: apache2 
+      state: started
+    when: ansible_os_family == "Debian"
+  
+  - name: restart httpd
+    service:
+      name: httpd
+      state: restarted
+    when: ansible_os_family == "RedHat"
+
+  - name: restart apache2
+    service:
+      name: apache2
+      state: restarted
+    when: ansible_os_family == "Debian"
+
+
+ansible-playbook setup-apache.yml
+
+
+further if you want to change port number from 8081 to 8021, again we need to edit playbook in all locations,
+instead of that we can use a variable(variable called port,there i will decide which port to use),
+
+
+•vi setup-apache.yml
+
+---
+- name: this playbook is to install httpd and apache package and run the service 
+  hosts: all	
+  become: true	
+  vars:
+    port: 8082
+  tasks:
+  - name: install httpd package 
+    yum:
+      name: httpd 
+      state: installed
+    when: ansible_os_family == "RedHat"
+    notify: start httpd 
+
+  - name: install apache2 package 
+    apt:
+      name: apache2 
+      state: present
+    when: ansible_os_family == "Debian" 
+    notify: start apache2
+    
+  - name: copy index.html 
+    copy:
+      src: /opt/index.html 
+      dest:  /var/www/html 
+      mode: 0666
+
+  - name: Ensure the default httpd port is {{ port }}
+    lineinfile:
+      path: /etc/httpd/conf/httpd.conf 
+      regexp: '^Listen '
+      insertafter: '^#Listen ' 
+      line: Listen {{ port }}
+    when: ansible_os_family == "RedHat" 
+    notify: restart httpd
+
+  - name: Ensure the default apache2 port is {{ port }} on ubuntu
+    lineinfile:
+      path: /etc/apache2/ports.conf
+      regexp: '^Listen '
+      insertafter: "# /etc/apache2/sites-enabled/000-default.conf"      
+      line: Listen {{ port }}
+    when: ansible_os_family == "Debian" 
+    notify: restart apache2
+
+  handlers:
+  - name: start httpd 
+    service:
+      name: httpd 
+      state: started
+    when: ansible_os_family == "RedHat"  
+
+  - name: start apache2  
+    service:
+      name: apache2 
+      state: started
+    when: ansible_os_family == "Debian"
+  
+  - name: restart httpd
+    service:
+      name: httpd
+      state: restarted
+    when: ansible_os_family == "RedHat"
+
+  - name: restart apache2
+    service:
+      name: apache2
+      state: restarted
+    when: ansible_os_family == "Debian"
+
+
+ansible-playbook setup-apache.yml
+
+
+
+
+Convert a playbook into a role – lab:-
+=======================================
+the above playbook is very large to execute and if we keep on adding tasks,it may become complex and creates confusion,so instead of that we can create a role
+•To create a role use the command: ansible-galaxy init setup-apache
+ cd setup-apache
+ ls
+ defaults files handlers meta tasks templates tests vars 
+
+i have copied the setup-apache.yml playbook tasks and split them into directories according to the naming convention of roles.while copying,we should not copy the headers
+- make sure to enable 8082 port at SG level
+
+•under defaults
+ cd defaults
+ vi main.yml
+ ---
+ # defaults file for setup-apache 
+ port: 8080
+
+
+•under files
+ cd files
+ cp /opt/index.html files
+ cat index.html
+ <h1> Welcome to Apache tomcat </h1>
+
+•under handlers
+ cd handlers
+ vi main.yml
+ ---
+ # handlers file for setup-apache
+ - name: start httpd 
+    service:
+      name: httpd 
+      state: started
+    when: ansible_os_family == "RedHat" 
+
+  - name: start apache2  
+    service:
+      name: apache2 
+      state: started
+    when: ansible_os_family == "Debian"
+  
+  - name: restart httpd
+    service:
+      name: httpd
+      state: restarted
+    when: ansible_os_family == "RedHat"
+
+  - name: restart apache2
+    service:
+      name: apache2
+      state: restarted
+    when: ansible_os_family == "Debian"
+
+
+•under tasks
+ cd tasks
+ vi main.yml
+ ---
+ # tasks file for setup-apache
+  - name: install httpd package 
+    yum:
+      name: httpd 
+      state: installed
+    when: ansible_os_family == "RedHat"
+    notify: start httpd 
+
+  - name: install apache2 package 
+    apt:
+      name: apache2 
+      state: present
+    when: ansible_os_family == "Debian" 
+    notify: start apache2
+    
+  - name: copy index.html 
+    copy:
+      src: /opt/index.html 
+      dest:  /var/www/html 
+      mode: 0666
+
+  - name: Ensure the default httpd port is {{ port }}
+    lineinfile:
+      path: /etc/httpd/conf/httpd.conf 
+      regexp: '^Listen '
+      insertafter: '^#Listen ' 
+      line: Listen {{ port }}
+    when: ansible_os_family == "RedHat" 
+    notify: restart httpd
+
+  - name: Ensure the default apache2 port is {{ port }} on ubuntu
+    lineinfile:
+      path: /etc/apache2/ports.conf
+      regexp: '^Listen '
+      insertafter: "# /etc/apache2/sites-enabled/000-default.conf"      
+      line: Listen {{ port }}
+    when: ansible_os_family == "Debian" 
+    notify: restart apache2
+ 
+
+•under vars
+ vi main.yml
+ ---
+ # vars file for setup-apache
+  port: 8082
+
+
+
+- remove others directories which you dont need to specify
+  rm -rf meta tests templates
+
+note:- in role, tasks directory is mandatory and remaining all are optional
+
+
+how can we excute the role:-
+we need to create a ansible playbook,and in the playbook we need to call the role
+
+vi setup-apache-backup.yml
+
+---
+- name: this playbook is to install httpd and apache package and run the service 
+  hosts: all	
+  become: true	
+  roles:
+    - setup-apache                 (role name)
+ 
+
+before installing,uninstall httpd,apache2 in all systems by using uninstall_httpd_apache.yml playbook
+- in rhel httpd is failing because of os problem..we need to disable the selinux
+- cat /etc/selinux/config
+  set enforcing to disabled, SELINUX=disabled
+
+
+ansible-playbook setup-apache-backup.yml
+ansible-playbook setup-apache-backup.yml --extra-vars "port=8080"      (it will have the highest the priority)
+
+so this is how we can use roles to simplify the plabook and roles are reusable
+
+
+Push Your playbooks on to github repo:-
+=======================================
+create a new repo in github
+name:- ansible_for_beginners
+
+git init
+git add .
+git status (working directory or staging)
+git commit -m "ansible for beginners"
+we need to set username and email
+- git config --global user.email "your email"
+- git config --global user.name "your name"
+git remote add origin <your github url>
+git push origin master
+- asks username and password of github
+once you provide credentials 
+your files will be pushed
+https://github.com/yankils/ansible_for_beginners
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
