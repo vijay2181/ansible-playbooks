@@ -1,5 +1,5 @@
-                                         ANSIBLE FOR DEVOPS ENGINEERS-VIJAY
-                                      XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+                                    ANSIBLE FOR DEVOPS ENGINEERS-VIJAY KUMAR ANUGANTI
+                              XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
 
 WHAT IS ANSIBLE:-
@@ -1799,7 +1799,6 @@ git push origin master
 - asks username and password of github
 once you provide credentials 
 your files will be pushed
-https://github.com/yankils/ansible_for_beginners
 
 
 
