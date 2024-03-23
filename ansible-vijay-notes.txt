@@ -18,7 +18,7 @@ ansible is simple
                   -tasks executed in order
 ansible is powerful
                   -configuration
-                  -app deployment
+                  -app deploymentF
                   -provisioning
                   -orchestration
 ansible is agentless
@@ -1305,7 +1305,7 @@ Using ansible-vault with git:-
 •Create a new repo(private) in git  
   [repo name: valut]
 •clone the repo with user name and password
- git clone https://github.com/yankils/vault.git
+ git clone https://github.com/vijay2181/vault.git
  - but if i use this url in ansible playbook,i cannot provide username and password that is why,in url itself    we can provide username and password.so we can use 
 
  git clone https://username:password@<your git hub url>
@@ -1337,7 +1337,7 @@ vi ansible-vault.yml
 ansible-playbook ansible-vault.yml --check
 ansible-playbook ansible-vault.yml
 
-•Note: in above playbook we have mentioned the password of git,and by this anyone can access the git account,so to over  come that you can use ansible-vault with respect to variable.you can define a variable in file and pass over  to the playbook.we can replace the value in playbook with the variable.so to implement this,see below playbook
+•Note: in above playbook we have mentioned the password of git,and by this anyone can access the git account,so to over  come that you can use ansible-vault with respect to variable.you can define a variable in file and pass over  to the playbook.we can replace the value in playbook with the variable. so to implement this,see below playbook
 
 create a encrypted password file by using ansible-vault:-
 
